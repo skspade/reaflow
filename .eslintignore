@@ -6,3 +6,4 @@ demo/
 coverage/
 src/**/*.story.tsx
 src/**/*.test.ts
+src/**/*.test.tsx
