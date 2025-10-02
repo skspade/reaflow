@@ -68,7 +68,7 @@ export interface NodeProps<T = any> extends NodeDragEvents<NodeData<T>, PortData
 
   childNode?: ReactElement<NodeProps, typeof Node> | ((node: NodeProps) => ReactElement<NodeProps, typeof Node>);
 
-  childEdge?: ReactElement<EdgeProps, typeof Edge> | ((edge: EdgeProps) => ReactElement<NodeProps, typeof Edge>);
+  childEdge?: ReactElement<EdgeProps, typeof Edge> | ((edge: EdgeProps) => ReactElement<EdgeProps, typeof Edge>);
 
   remove: ReactElement<RemoveProps, typeof Remove>;
   icon: ReactElement<IconProps, typeof Icon>;
@@ -320,8 +320,8 @@ export const Node: FC<Partial<NodeProps>> = ({ id, x, y, ports, labels, height, 
       />
       {children && <Fragment>{typeof children === 'function' ? (children as NodeChildrenAsFunction)(nodeChildProps) : children}</Fragment>}
       {icon && properties.icon && <CloneElement<IconProps> element={icon} {...properties.icon} />}
-      {label && labels?.length > 0 && labels.map((l, index) => <CloneElement<LabelProps> element={label} key={index} {...(l as LabelProps)} />)}
-      {port && ports?.length > 0 && ports.map((p) => <CloneElement<PortProps> element={port} key={p.id} active={!isMultiPort && dragging} disabled={isDisabled || !linkable} offsetX={newX} offsetY={newY} onDragStart={onDragStartCallback} onDrag={onDragCallback} onDragEnd={onDragEndCallback} {...(p as PortProps)} id={`${id}-port-${p.id}`} />)}
+      {label && labels?.length > 0 && labels.map((l, index) => <CloneElement<LabelProps> element={label} key={index} {...l} />)}
+      {port && ports?.length > 0 && ports.map((p) => <CloneElement<PortProps> element={port} key={p.id} active={!isMultiPort && dragging} disabled={isDisabled || !linkable} offsetX={newX} offsetY={newY} onDragStart={onDragStartCallback} onDrag={onDragCallback} onDragEnd={onDragEndCallback} {...p} id={`${id}-port-${p.id}`} />)}
       {!isDisabled && isActive && !readonly && remove && removable && (
         <CloneElement<RemoveProps>
           element={remove}
