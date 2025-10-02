@@ -186,7 +186,7 @@ export type CanvasRef = LayoutResult & ZoomResult;
 
 const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({ className, height = '100%', width = '100%', readonly, disabled = false, animated = true, arrow = <MarkerArrow />, node = <Node />, edge = <Edge />, dragNode = <Node />, dragEdge = <Edge />, onMouseEnter = () => undefined, onMouseLeave = () => undefined, onCanvasClick = () => undefined }, ref: Ref<CanvasRef>) => {
   const id = useId();
-  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, positionCanvas, fitCanvas, setScrollXY, panType, ...rest } = useCanvas();
+  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, zoomToPoint, positionCanvas, fitCanvas, setScrollXY, panType, ...rest } = useCanvas();
   const [dragType, setDragType] = useState<null | NodeDragType>(null);
 
   useImperativeHandle(ref, () => ({
@@ -242,10 +242,21 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
 
         const zoomFactor = delta[1] * -0.02;
 
-        if (delta[1] > 0) {
-          zoomOut(zoomFactor);
+        if (zoomToPoint && svgRef.current) {
+          // Calculate mouse position relative to SVG
+          const svgRect = svgRef.current.getBoundingClientRect();
+          const mouseX = event.clientX - svgRect.left;
+          const mouseY = event.clientY - svgRect.top;
+
+          // Use cursor-based zoom
+          zoomToPoint(mouseX, mouseY, zoomFactor);
         } else {
-          zoomIn(zoomFactor);
+          // Fallback to center-based zoom if zoomToPoint is not available
+          if (delta[1] > 0) {
+            zoomOut(zoomFactor);
+          } else {
+            zoomIn(zoomFactor);
+          }
         }
       }
     },

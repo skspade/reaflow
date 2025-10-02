@@ -4,56 +4,21 @@ import { NodeData, PortData } from '../types';
 import { EdgeDragResult, useEdgeDrag } from './useEdgeDrag';
 import { useZoom, ZoomResult } from './useZoom';
 
-export interface CanvasProviderValue
-  extends EdgeDragResult,
-    LayoutResult,
-    ZoomResult {
+export interface CanvasProviderValue extends EdgeDragResult, LayoutResult, ZoomResult {
   selections?: string[];
   readonly?: boolean;
   pannable: boolean;
-  panType: 'scroll' | 'drag'; 
+  panType: 'scroll' | 'drag';
 }
 
 export const CanvasContext = createContext<CanvasProviderValue>({} as any);
 
 export interface CanvasProviderProps {
-  onNodeLink?: (
-    event: any,
-    fromNode: NodeData,
-    toNode: NodeData,
-    fromPort?: PortData
-  ) => void;
-  onNodeLinkCheck?: (
-    event: any,
-    fromNode: NodeData,
-    toNode: NodeData,
-    fromPort?: PortData
-  ) => undefined | boolean;
+  onNodeLink?: (event: any, fromNode: NodeData, toNode: NodeData, fromPort?: PortData) => void;
+  onNodeLinkCheck?: (event: any, fromNode: NodeData, toNode: NodeData, fromPort?: PortData) => undefined | boolean;
 }
 
-export const CanvasProvider = ({
-  selections,
-  onNodeLink,
-  readonly,
-  children,
-  nodes,
-  edges,
-  maxHeight,
-  fit,
-  maxWidth,
-  direction,
-  layoutOptions,
-  pannable,
-  panType,
-  defaultPosition,
-  zoomable,
-  zoom,
-  minZoom,
-  maxZoom,
-  onNodeLinkCheck,
-  onLayoutChange,
-  onZoomChange
-}) => {
+export const CanvasProvider = ({ selections, onNodeLink, readonly, children, nodes, edges, maxHeight, fit, maxWidth, direction, layoutOptions, pannable, panType, defaultPosition, zoomable, zoom, minZoom, maxZoom, onNodeLinkCheck, onLayoutChange, onZoomChange }) => {
   const zoomProps = useZoom({
     zoom,
     minZoom,
@@ -74,6 +39,8 @@ export const CanvasProvider = ({
     fit,
     layoutOptions,
     zoom: zoomProps.zoom,
+    minZoom: zoomProps.minZoom,
+    maxZoom: zoomProps.maxZoom,
     setZoom: zoomProps.setZoom,
     onLayoutChange
   });
@@ -104,9 +71,7 @@ export const useCanvas = () => {
   const context = useContext(CanvasContext);
 
   if (context === undefined) {
-    throw new Error(
-      '`useCanvas` hook must be used within a `CanvasContext` component'
-    );
+    throw new Error('`useCanvas` hook must be used within a `CanvasContext` component');
   }
 
   return context;
