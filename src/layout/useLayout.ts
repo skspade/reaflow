@@ -24,6 +24,8 @@ export interface LayoutProps {
   defaultPosition: CanvasPosition;
   fit: boolean;
   zoom: number;
+  minZoom: number;
+  maxZoom: number;
   layoutOptions?: ElkCanvasLayoutOptions;
   direction: CanvasDirection;
   setZoom: (factor: number) => void;
@@ -91,10 +93,15 @@ export interface LayoutResult {
    */
   setScrollXY?: (xy: [number, number], animated?: boolean) => void;
 
+  /**
+   * Zoom to a specific point on the canvas.
+   */
+  zoomToPoint?: (cursorX: number, cursorY: number, zoomDelta: number) => void;
+
   observe: (el: HTMLDivElement) => void;
 }
 
-export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pannable, defaultPosition, direction, layoutOptions = {}, zoom, setZoom, onLayoutChange }: LayoutProps) => {
+export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pannable, defaultPosition, direction, layoutOptions = {}, zoom, minZoom, maxZoom, setZoom, onLayoutChange }: LayoutProps) => {
   const scrolled = useRef<boolean>(false);
   const ref = useRef<HTMLDivElement>();
   const { observe, width, height } = useDimensions<HTMLDivElement>();
@@ -138,21 +145,21 @@ export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pa
         const centerX = (canvasWidth - layout.width * zoom) / 2;
         const centerY = (canvasHeight - layout.height * zoom) / 2;
         switch (position) {
-          case CanvasPosition.CENTER:
-            setXY([centerX, centerY]);
-            break;
-          case CanvasPosition.TOP:
-            setXY([centerX, 0]);
-            break;
-          case CanvasPosition.LEFT:
-            setXY([0, centerY]);
-            break;
-          case CanvasPosition.RIGHT:
-            setXY([canvasWidth - layout.width * zoom, centerY]);
-            break;
-          case CanvasPosition.BOTTOM:
-            setXY([centerX, canvasHeight - layout.height * zoom]);
-            break;
+        case CanvasPosition.CENTER:
+          setXY([centerX, centerY]);
+          break;
+        case CanvasPosition.TOP:
+          setXY([centerX, 0]);
+          break;
+        case CanvasPosition.LEFT:
+          setXY([0, centerY]);
+          break;
+        case CanvasPosition.RIGHT:
+          setXY([canvasWidth - layout.width * zoom, centerY]);
+          break;
+        case CanvasPosition.BOTTOM:
+          setXY([centerX, canvasHeight - layout.height * zoom]);
+          break;
         }
       }
     },
@@ -165,21 +172,21 @@ export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pa
       const scrollCenterY = (canvasHeight - height) / 2;
       if (pannable) {
         switch (position) {
-          case CanvasPosition.CENTER:
-            scrollToXY([scrollCenterX, scrollCenterY], animated);
-            break;
-          case CanvasPosition.TOP:
-            scrollToXY([scrollCenterX, 0], animated);
-            break;
-          case CanvasPosition.LEFT:
-            scrollToXY([0, scrollCenterY], animated);
-            break;
-          case CanvasPosition.RIGHT:
-            scrollToXY([canvasWidth - width, scrollCenterY], animated);
-            break;
-          case CanvasPosition.BOTTOM:
-            scrollToXY([scrollCenterX, canvasHeight - height], animated);
-            break;
+        case CanvasPosition.CENTER:
+          scrollToXY([scrollCenterX, scrollCenterY], animated);
+          break;
+        case CanvasPosition.TOP:
+          scrollToXY([scrollCenterX, 0], animated);
+          break;
+        case CanvasPosition.LEFT:
+          scrollToXY([0, scrollCenterY], animated);
+          break;
+        case CanvasPosition.RIGHT:
+          scrollToXY([canvasWidth - width, scrollCenterY], animated);
+          break;
+        case CanvasPosition.BOTTOM:
+          scrollToXY([scrollCenterX, canvasHeight - height], animated);
+          break;
         }
       }
     },
@@ -236,6 +243,27 @@ export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pa
     [canvasHeight, canvasWidth, height, layout, positionVector, setZoom, width]
   );
 
+  const zoomToPoint = useCallback(
+    (cursorX: number, cursorY: number, zoomDelta: number) => {
+      // Calculate the new zoom level with limits
+      const currentZoomFactor = zoom - 1;
+      const newZoomFactor = Math.max(minZoom, Math.min(maxZoom, currentZoomFactor + zoomDelta));
+      const newZoom = newZoomFactor + 1;
+
+      // Only update if zoom actually changes
+      if (newZoom !== zoom) {
+        // Calculate new translate to keep cursor position fixed
+        // Formula: newTranslate = cursorPos - (cursorPos - oldTranslate) * (newZoom / oldZoom)
+        const newX = cursorX - (cursorX - xy[0]) * (newZoom / zoom);
+        const newY = cursorY - (cursorY - xy[1]) * (newZoom / zoom);
+
+        setXY([newX, newY]);
+        setZoom(newZoomFactor);
+      }
+    },
+    [zoom, minZoom, maxZoom, xy, setZoom]
+  );
+
   useLayoutEffect(() => {
     const scroller = ref.current;
     if (scroller && !scrolled.current && layout && height && width) {
@@ -276,6 +304,7 @@ export const useLayout = ({ maxWidth, maxHeight, nodes = [], edges = [], fit, pa
     positionCanvas,
     fitCanvas,
     fitNodes,
-    setScrollXY: scrollToXY
+    setScrollXY: scrollToXY,
+    zoomToPoint
   } as LayoutResult;
 };

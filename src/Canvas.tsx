@@ -186,7 +186,7 @@ export type CanvasRef = LayoutResult & ZoomResult;
 
 const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({ className, height = '100%', width = '100%', readonly, disabled = false, animated = true, arrow = <MarkerArrow />, node = <Node />, edge = <Edge />, dragNode = <Node />, dragEdge = <Edge />, onMouseEnter = () => undefined, onMouseLeave = () => undefined, onCanvasClick = () => undefined }, ref: Ref<CanvasRef>) => {
   const id = useId();
-  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, positionCanvas, fitCanvas, setScrollXY, panType, ...rest } = useCanvas();
+  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, zoomToPoint, positionCanvas, fitCanvas, setScrollXY, panType, ...rest } = useCanvas();
   const [dragType, setDragType] = useState<null | NodeDragType>(null);
 
   useImperativeHandle(ref, () => ({
@@ -211,9 +211,6 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
   const panStartScrollPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const dragNodeData = useMemo(() => getDragNodeData(canvasDragNode, layout?.children), [canvasDragNode, layout?.children]);
-  const [dragNodeDataWithChildren, setDragNodeDataWithChildren] = useState<{
-    [key: string]: any;
-  }>(dragNodeData);
   const dragNodeElement = useMemo(() => (typeof dragNode === 'function' ? dragNode(dragNodeData as NodeProps) : dragNode), [dragNode, dragNodeData]);
   useLayoutEffect(() => {
     if (!mount.current && layout !== null && xy[0] > 0 && xy[1] > 0) {
@@ -242,10 +239,21 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
 
         const zoomFactor = delta[1] * -0.02;
 
-        if (delta[1] > 0) {
-          zoomOut(zoomFactor);
+        if (zoomToPoint && svgRef.current) {
+          // Calculate mouse position relative to SVG
+          const svgRect = svgRef.current.getBoundingClientRect();
+          const mouseX = event.clientX - svgRect.left;
+          const mouseY = event.clientY - svgRect.top;
+
+          // Use cursor-based zoom
+          zoomToPoint(mouseX, mouseY, zoomFactor);
         } else {
-          zoomIn(zoomFactor);
+          // Fallback to center-based zoom if zoomToPoint is not available
+          if (delta[1] > 0) {
+            zoomOut(zoomFactor);
+          } else {
+            zoomIn(zoomFactor);
+          }
         }
       }
     },
@@ -259,33 +267,6 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
   const onDragStart = useCallback((event) => {
     setDragType(event.dragType);
   }, []);
-
-  const createDragNodeChildren = useCallback(
-    (children: any) => {
-      if (!children || !Array.isArray(children)) {
-        return [];
-      }
-
-      return children.map(({ children, ...n }) => {
-        const element = typeof dragNode === 'function' ? dragNode(n as NodeProps) : dragNode;
-        return <CloneElement<NodeProps> key={`${id}-node-${n.id}-node-drag`} element={element} disabled children={element.props.children} animated={animated} nodes={children} childEdge={dragEdge} childNode={dragNode} {...n} onDragStart={onDragStart} id={`${id}-node-${n.id}-node-drag`} />;
-      });
-    },
-    // Passing in dragEdge (JSX) will cause the function to be recalculated constantly,
-    // triggering the below useEffect. Since dragEdge and dragNode are passed in props
-    // on Canvas, they are unlikely to change and can be ignored
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [animated, id]
-  );
-
-  useEffect(() => {
-    if (dragNodeData && Object.keys(dragNodeData).length > 0) {
-      const nodeCopy = { ...dragNodeData };
-      // Node children is expecting a list of React Elements, need to create a list of elements
-      nodeCopy.children = createDragNodeChildren(nodeCopy.children);
-      setDragNodeDataWithChildren(nodeCopy);
-    }
-  }, [createDragNodeChildren, dragNodeData, layout?.children]);
 
   return (
     <div
@@ -308,7 +289,7 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
       <svg xmlns="http://www.w3.org/2000/svg" id={id} ref={svgRef} height={canvasHeight} width={canvasWidth} onClick={onCanvasClick}>
         {arrow !== null && (
           <defs>
-            <CloneElement<MarkerArrowProps> element={arrow} {...(arrow as MarkerArrowProps)} />
+            <CloneElement<MarkerArrowProps> element={arrow} />
           </defs>
         )}
         <motion.g
@@ -384,7 +365,15 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
               )}
             </Fragment>
           ))}
-          {dragCoords !== null && dragNodeDataWithChildren && dragType === 'node' && !readonly && <CloneElement<NodeProps> {...dragNodeDataWithChildren} element={dragNodeElement} height={dragNodeDataWithChildren?.props?.height || dragNodeDataWithChildren?.height} width={dragNodeDataWithChildren?.props?.width || dragNodeDataWithChildren?.width} id={`${id}-node-drag`} animated={animated} className={css.dragNode} disabled x={dragCoords[0].endPoint.x} y={dragCoords[0].endPoint.y} />}
+          {dragCoords !== null &&
+            dragNodeData &&
+            Object.keys(dragNodeData).length > 0 &&
+            dragType === 'node' &&
+            !readonly &&
+            (() => {
+              const { children, ...dragNodeProps } = dragNodeData;
+              return <CloneElement<NodeProps> {...dragNodeProps} element={dragNodeElement} nodes={children} childEdge={dragEdge} childNode={dragNode} height={dragNodeData?.props?.height || dragNodeData?.height} width={dragNodeData?.props?.width || dragNodeData?.width} id={`${id}-node-drag`} animated={animated} className={css.dragNode} disabled x={dragCoords[0].endPoint.x} y={dragCoords[0].endPoint.y} />;
+            })()}
         </motion.g>
       </svg>
     </div>

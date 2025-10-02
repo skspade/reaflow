@@ -163,7 +163,7 @@ export const Edge: FC<Partial<EdgeProps>> = ({ sections, interpolation = 'curved
         }}
       />
       {children && <Fragment>{typeof children === 'function' ? (children as EdgeChildrenAsFunction)(edgeChildProps) : children}</Fragment>}
-      {labels?.length > 0 && labels.map((l, index) => <CloneElement<LabelProps> element={label} key={index} edgeChildProps={edgeChildProps} {...(l as LabelProps)} />)}
+      {labels?.length > 0 && labels.map((l, index) => <CloneElement<LabelProps> element={label} key={index} edgeChildProps={edgeChildProps} {...l} />)}
       {!isDisabled && center && !readonly && remove && removable && (
         <CloneElement<RemoveProps>
           element={remove}

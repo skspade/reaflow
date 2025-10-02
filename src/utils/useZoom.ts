@@ -23,6 +23,16 @@ export interface ZoomResult {
   svgRef: RefObject<SVGSVGElement | null>;
 
   /**
+   * Minimum zoom level.
+   */
+  minZoom: number;
+
+  /**
+   * Maximum zoom level.
+   */
+  maxZoom: number;
+
+  /**
    * Set a zoom factor of the canvas.
    */
   setZoom?: (factor: number) => void;
@@ -85,6 +95,8 @@ export const useZoom = ({ disabled = false, zoom = 1, minZoom = -0.5, maxZoom = 
   return {
     svgRef,
     zoom: factor + 1,
+    minZoom,
+    maxZoom,
     setZoom,
     zoomIn,
     zoomOut
