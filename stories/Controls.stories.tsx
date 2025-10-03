@@ -304,3 +304,62 @@ export const DragPan = () => (
     />
   </div>
 );
+
+export const CustomZoomSpeed = () => {
+  const [speed, setSpeed] = useState<number>(0.02);
+  const [zoom, setZoom] = useState<number>(1);
+  const ref = useRef<CanvasRef | null>(null);
+
+  return (
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
+      <pre style={{ zIndex: 9, position: 'absolute', bottom: 15, right: 15, background: 'rgba(0, 0, 0, .5)', padding: 20, color: 'white' }}>
+        Zoom: {zoom.toFixed(2)}<br />
+        Speed: {speed.toFixed(3)}<br />
+        <button style={{ display: 'block', width: '100%', margin: '5px 0' }} onClick={() => setSpeed(0.01)}>Slow (0.01)</button>
+        <button style={{ display: 'block', width: '100%', margin: '5px 0' }} onClick={() => setSpeed(0.02)}>Normal (0.02)</button>
+        <button style={{ display: 'block', width: '100%', margin: '5px 0' }} onClick={() => setSpeed(0.05)}>Fast (0.05)</button>
+        <button style={{ display: 'block', width: '100%', margin: '5px 0' }} onClick={() => ref.current?.fitCanvas(true)}>Fit</button>
+      </pre>
+      <Canvas
+        maxZoom={10}
+        minZoom={-0.9}
+        maxWidth={3000}
+        maxHeight={1500}
+        zoom={zoom}
+        zoomSpeed={speed}
+        ref={ref}
+        nodes={[
+          {
+            id: '1',
+            text: 'Node 1'
+          },
+          {
+            id: '2',
+            text: 'Node 2'
+          },
+          {
+            id: '3',
+            text: 'Node 3'
+          }
+        ]}
+        edges={[
+          {
+            id: '1-2',
+            from: '1',
+            to: '2'
+          },
+          {
+            id: '1-3',
+            from: '1',
+            to: '3'
+          }
+        ]}
+        onZoomChange={z => {
+          console.log('zooming', z);
+          setZoom(z);
+        }}
+        onLayoutChange={layout => console.log('Layout', layout)}
+      />
+    </div>
+  );
+};

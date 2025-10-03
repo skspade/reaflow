@@ -9,6 +9,7 @@ export interface CanvasProviderValue extends EdgeDragResult, LayoutResult, ZoomR
   readonly?: boolean;
   pannable: boolean;
   panType: 'scroll' | 'drag';
+  zoomSpeed: number;
 }
 
 export const CanvasContext = createContext<CanvasProviderValue>({} as any);
@@ -18,7 +19,7 @@ export interface CanvasProviderProps {
   onNodeLinkCheck?: (event: any, fromNode: NodeData, toNode: NodeData, fromPort?: PortData) => undefined | boolean;
 }
 
-export const CanvasProvider = ({ selections, onNodeLink, readonly, children, nodes, edges, maxHeight, fit, maxWidth, direction, layoutOptions, pannable, panType, defaultPosition, zoomable, zoom, minZoom, maxZoom, onNodeLinkCheck, onLayoutChange, onZoomChange }) => {
+export const CanvasProvider = ({ selections, onNodeLink, readonly, children, nodes, edges, maxHeight, fit, maxWidth, direction, layoutOptions, pannable, panType, defaultPosition, zoomable, zoom, minZoom, maxZoom, zoomSpeed, onNodeLinkCheck, onLayoutChange, onZoomChange }) => {
   const zoomProps = useZoom({
     zoom,
     minZoom,
@@ -57,6 +58,7 @@ export const CanvasProvider = ({ selections, onNodeLink, readonly, children, nod
         readonly,
         pannable,
         panType,
+        zoomSpeed,
         ...layoutProps,
         ...zoomProps,
         ...dragProps

@@ -85,6 +85,11 @@ export interface CanvasContainerProps extends CanvasProps {
   maxZoom?: number;
 
   /**
+   * Speed multiplier for mouse wheel zoom.
+   */
+  zoomSpeed?: number;
+
+  /**
    * ELKJS Layout Options
    */
   layoutOptions?: ElkCanvasLayoutOptions;
@@ -186,7 +191,7 @@ export type CanvasRef = LayoutResult & ZoomResult;
 
 const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({ className, height = '100%', width = '100%', readonly, disabled = false, animated = true, arrow = <MarkerArrow />, node = <Node />, edge = <Edge />, dragNode = <Node />, dragEdge = <Edge />, onMouseEnter = () => undefined, onMouseLeave = () => undefined, onCanvasClick = () => undefined }, ref: Ref<CanvasRef>) => {
   const id = useId();
-  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, zoomToPoint, positionCanvas, fitCanvas, setScrollXY, panType, ...rest } = useCanvas();
+  const { pannable, dragCoords, dragNode: canvasDragNode, layout, containerRef, svgRef, canvasHeight, canvasWidth, xy, zoom, setZoom, observe, zoomIn, zoomOut, zoomToPoint, positionCanvas, fitCanvas, setScrollXY, panType, zoomSpeed, ...rest } = useCanvas();
   const [dragType, setDragType] = useState<null | NodeDragType>(null);
 
   useImperativeHandle(ref, () => ({
@@ -237,7 +242,7 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
       onWheel: ({ event, delta, last }) => {
         !last && event.preventDefault();
 
-        const zoomFactor = delta[1] * -0.02;
+        const zoomFactor = delta[1] * -zoomSpeed;
 
         if (zoomToPoint && svgRef.current) {
           // Calculate mouse position relative to SVG
@@ -380,8 +385,8 @@ const InternalCanvas: FC<CanvasProps & { ref?: Ref<CanvasRef> }> = forwardRef(({
   );
 });
 
-export const Canvas: FC<CanvasContainerProps & { ref?: Ref<CanvasRef> }> = forwardRef(({ selections = [], readonly = false, fit = false, nodes = [], edges = [], maxHeight = 2000, maxWidth = 2000, direction = 'DOWN', pannable = true, panType = 'scroll', zoom = 1, defaultPosition = CanvasPosition.CENTER, zoomable = true, minZoom = -0.5, maxZoom = 1, onNodeLink = () => undefined, onNodeLinkCheck = () => undefined, onLayoutChange = () => undefined, onZoomChange = () => undefined, layoutOptions, ...rest }, ref: Ref<CanvasRef>) => (
-  <CanvasProvider layoutOptions={layoutOptions} nodes={nodes} edges={edges} zoom={zoom} defaultPosition={defaultPosition} minZoom={minZoom} maxZoom={maxZoom} fit={fit} maxHeight={maxHeight} maxWidth={maxWidth} direction={direction} pannable={pannable} panType={panType} zoomable={zoomable} readonly={readonly} onLayoutChange={onLayoutChange} selections={selections} onZoomChange={onZoomChange} onNodeLink={onNodeLink} onNodeLinkCheck={onNodeLinkCheck}>
+export const Canvas: FC<CanvasContainerProps & { ref?: Ref<CanvasRef> }> = forwardRef(({ selections = [], readonly = false, fit = false, nodes = [], edges = [], maxHeight = 2000, maxWidth = 2000, direction = 'DOWN', pannable = true, panType = 'scroll', zoom = 1, defaultPosition = CanvasPosition.CENTER, zoomable = true, minZoom = -0.5, maxZoom = 1, zoomSpeed = 0.02, onNodeLink = () => undefined, onNodeLinkCheck = () => undefined, onLayoutChange = () => undefined, onZoomChange = () => undefined, layoutOptions, ...rest }, ref: Ref<CanvasRef>) => (
+  <CanvasProvider layoutOptions={layoutOptions} nodes={nodes} edges={edges} zoom={zoom} defaultPosition={defaultPosition} minZoom={minZoom} maxZoom={maxZoom} zoomSpeed={zoomSpeed} fit={fit} maxHeight={maxHeight} maxWidth={maxWidth} direction={direction} pannable={pannable} panType={panType} zoomable={zoomable} readonly={readonly} onLayoutChange={onLayoutChange} selections={selections} onZoomChange={onZoomChange} onNodeLink={onNodeLink} onNodeLinkCheck={onNodeLinkCheck}>
     <InternalCanvas ref={ref} {...rest} />
   </CanvasProvider>
 ));
